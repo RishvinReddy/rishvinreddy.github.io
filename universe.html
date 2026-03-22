@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <link rel="icon" href="icon.jpeg" type="image/jpeg">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Universe — Erolla Rishvin Reddy</title>
+  <meta name="description" content="Interactive 3D galaxy visualization of projects and skills.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .glass-panel {
+        @apply bg-white/60 backdrop-blur-2xl border border-black/5 shadow-2xl;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+      }
+      .hud-border {
+        position: relative;
+      }
+      .hud-border::before, .hud-border::after {
+        content: '';
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border: 2px solid theme('colors.primary');
+        transition: all 0.3s ease;
+      }
+      .hud-border::before { top: 0; left: 0; border-right: none; border-bottom: none; }
+      .hud-border::after { bottom: 0; right: 0; border-left: none; border-top: none; }
+      .hud-border:hover::before, .hud-border:hover::after { width: 30px; height: 30px; }
+      
+      .text-glow {
+        text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+      }
+      
+      .scanline {
+        background: linear-gradient(to bottom, transparent 50%, rgba(255, 255, 255, 0.02) 51%);
+        background-size: 100% 4px;
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 20;
+      }
+      
+      /* Global System Log */
+      .sys-log-container {
+        mask-image: linear-gradient(to top, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);
+        -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);
+      }
+      .sys-log-entry {
+        animation: slideInLeft 0.3s ease-out forwards;
+      }
+      @keyframes slideInLeft {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      
+      /* Planet Floating Labels using CSS2DRenderer */
+      .planet-label {
+        color: #111827;
+        font-family: 'Fira Code', monospace;
+        font-size: 10px;
+        padding: 4px 8px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(4px);
+        pointer-events: none;
+        opacity: 0.5;
+        transition: opacity 0.3s, transform 0.3s;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: -15px;
+      }
+      .planet-label::before {
+        content: ''; position: absolute; bottom: -15px; left: -15px; width: 15px; height: 15px;
+        border-top: 1px solid theme('colors.primary'); border-right: 1px solid theme('colors.primary');
+        pointer-events: none;
+      }
+      .planet-label.active {
+        opacity: 1; border-color: theme('colors.primary'); transform: scale(1.2);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #f9fafb;
+      color: #111827;
+      font-family: "Playfair Display", "Times New Roman", Times, serif !important;
+    }
+    
+    * {
+      font-family: "Playfair Display", "Times New Roman", Times, serif !important;
+    }
+    #universe-canvas, #label-container {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+    #label-container { z-index: 2; pointer-events: none; }
+    
+    /* Loading overlay */
+    #loading-screen {
+      position: absolute;
+      inset: 0;
+      background: #f9fafb;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .data-stream {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.65rem;
+      color: theme('colors.primary');
+      opacity: 0.7;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+  </style>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Three.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- OrbitControls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- CSS2DRenderer for 3D HTML Labels -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+  
+  <!-- Three.js PostProcessing for Extreme Glow (Bloom) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <!-- Marked.js for README parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+</head>
+<body>
+  
+  <!-- Global CRT Scanline Effect -->
+  <div class="scanline"></div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="relative w-32 h-32 mb-8">
+      <!-- Outer Ring -->
+      <div class="absolute inset-0 rounded-full border border-white/10 border-t-primary animate-spin" style="animation-duration: 3s;"></div>
+      <!-- Middle Ring -->
+      <div class="absolute inset-2 rounded-full border border-white/10 border-r-indigo-500 border-b-indigo-500 animate-spin" style="animation-direction: reverse; animation-duration: 2s;"></div>
+      <!-- Inner Ring -->
+      <div class="absolute inset-5 rounded-full border border-white/5 border-l-purple-500 animate-[spin_1.5s_linear_infinite]"></div>
+      <!-- Core Icon -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <svg class="w-8 h-8 text-black animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+      </div>
+    </div>
+    <div class="text-center w-80">
+      <h2 class="text-2xl font-black tracking-[0.3em] uppercase text-black mb-2">DevOS <span class="text-primary text-glow">Engine</span></h2>
+      <div class="h-1 w-full bg-black/5 rounded overflow-hidden relative mb-4">
+        <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-indigo-500 w-full origin-left animate-[scaleX_2s_ease-out_forwards]"></div>
+      </div>
+      <p class="text-xs font-mono text-slate-600" id="loading-text">INITIALIZING QUANTUM STATE...</p>
+      <div class="data-stream mt-2 text-left h-12 flex flex-col justify-end" id="loading-stream"></div>
+    </div>
+  </div>
+
+  <!-- The 3D Canvas -->
+  <div id="universe-canvas"></div>
+  <!-- Floating DOM Labels -->
+  <div id="label-container"></div>
+
+  <!-- UI Overlay: Top Navigation -->
+  <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start pointer-events-none z-30">
+    <div class="flex flex-col gap-4">
+      <div class="pointer-events-auto group">
+        <a href="IDE.html" class="inline-flex items-center gap-3 px-5 py-3 rounded-none glass-panel hud-border hover:bg-black/5 transition-all text-sm font-bold tracking-widest uppercase text-black overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+          <svg class="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          <span class="relative z-10 text-glow">Disengage</span>
+        </a>
+      </div>
+      
+      <!-- Audio Toggle -->
+      <div class="pointer-events-auto">
+        <button id="toggle-audio" class="w-10 h-10 flex items-center justify-center rounded-sm glass-panel border border-white/10 hover:border-primary/50 text-slate-400 hover:text-white transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+          <svg class="w-4 h-4" id="icon-audio-off" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
+          <svg class="w-4 h-4 hidden" id="icon-audio-on" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Warp Navigation dropdown -->
+    <div class="pointer-events-auto relative group z-40">
+      <button class="inline-flex items-center gap-3 px-5 py-3 rounded-none glass-panel hud-border hover:bg-black/5 transition-all text-sm font-bold tracking-widest uppercase text-black">
+        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-glow">Warp Drive</span>
+        <svg class="w-4 h-4 opacity-70 group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+      <div class="absolute right-0 mt-3 w-72 rounded-none glass-panel opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all overflow-hidden border-t-2 border-t-primary" id="warp-menu">
+        <div class="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-white/5 flex justify-between items-center">
+          <span>Known Sectors</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        </div>
+        <div class="overflow-y-auto max-h-80 custom-scrollbar" id="warp-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Space Radar Mini-map (Under Exits) -->
+  <div class="absolute top-36 left-8 w-24 h-24 rounded-full border border-black/20 bg-white/40 backdrop-blur-md pointer-events-none z-20 flex items-center justify-center overflow-hidden shadow-[0_0_10px_rgba(0,0,0,0.1)]">
+    <div class="absolute inset-0 border-[0.5px] border-black/10 rounded-full scale-50"></div>
+    <div class="w-full h-px bg-black/10 absolute top-1/2"></div>
+    <div class="w-px h-full bg-black/10 absolute left-1/2"></div>
+    <div id="radar-sweep" class="absolute inset-0 w-1/2 h-1/2 bg-gradient-to-tr from-transparent to-primary/40 origin-bottom-right animate-[spin_4s_linear_infinite]"></div>
+    <div class="w-2 h-2 bg-primary rounded-full absolute shadow-[0_0_10px_rgba(0,0,0,0.1)] z-10"></div>
+  </div>
+  
+  <!-- System Event Log (Bottom Left) -->
+  <div class="absolute bottom-8 left-8 w-80 h-40 pointer-events-none z-20 flex flex-col justify-end">
+    <div class="flex items-center gap-2 mb-2 w-full border-b border-primary/20 pb-1">
+      <div class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_#ff2a5f]"></div>
+      <span class="text-[9px] font-mono font-black text-primary uppercase tracking-[0.2em] text-glow">LIVE_SYS_LOG</span>
+    </div>
+    <div id="sys-log" class="sys-log-container w-full h-full overflow-hidden flex flex-col justify-end gap-1.5 text-[10px] font-mono text-slate-400">
+      <!-- Logs injected by JS -->
+    </div>
+  </div>
+
+  <!-- UI Overlay: Interactive HUD (Bottom Right) -->
+  <div class="absolute bottom-8 right-8 pointer-events-none z-30 w-96 font-sans">
+    <div id="stats-panel" class="glass-panel hud-border p-6 rounded-none opacity-0 translate-x-8 pointer-events-auto transition-all duration-500 relative overflow-hidden">
+      
+      <!-- Decorative tech elements -->
+      <div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/10 to-transparent pointer-events-none"></div>
+      <div class="absolute top-2 right-2 flex gap-1">
+        <div class="w-1 h-1 bg-white/40"></div>
+        <div class="w-1 h-1 bg-white/40"></div>
+        <div class="w-1 h-1 bg-primary"></div>
+      </div>
+
+      <div class="flex items-center justify-between mb-4 mt-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-none bg-primary animate-pulse"></span>
+          <span id="planet-type" class="text-[10px] font-mono font-black uppercase tracking-widest text-primary text-glow">TARGET_LOCKED</span>
+        </div>
+        <button id="close-stats" class="text-slate-600 hover:text-black transition-colors bg-black/5 hover:bg-primary/20 p-1.5 rounded">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      
+      <h2 id="planet-name" class="text-2xl font-black text-black mb-2 uppercase tracking-wide leading-tight">Overview</h2>
+      <p id="planet-desc" class="text-sm text-slate-700 mb-6 leading-relaxed font-light min-h-[60px]">
+        Establishing neural link... Space represents projects. Moons represent technologies.
+      </p>
+      
+      <div id="planet-data" class="hidden">
+        <div class="grid grid-cols-2 gap-px mb-6 bg-black/10 border border-black/5">
+          <div class="bg-white/80 p-3">
+            <p class="text-[9px] font-mono text-slate-500 uppercase font-bold tracking-widest mb-1">Architecture</p>
+            <p id="planet-lang" class="text-base font-bold text-emerald-600 text-glow">---</p>
+          </div>
+          <div class="bg-white/80 p-3">
+            <p class="text-[9px] font-mono text-slate-500 uppercase font-bold tracking-widest mb-1">Energy Level</p>
+            <div class="flex items-center gap-1.5 text-amber-400">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <p id="planet-stars" class="text-base font-bold text-glow">---</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex gap-3">
+          <a id="planet-btn-repo" href="#" target="_blank" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/20 text-xs font-black uppercase tracking-widest transition-all hover:border-white">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg>
+            Terminal
+          </a>
+          <button id="planet-btn-ai" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-primary/10 hover:bg-primary/20 border border-primary/50 text-primary text-xs font-black uppercase tracking-widest transition-all hover:border-primary hover:shadow-[0_0_15px_rgba(242,13,70,0.4)]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Ask AI
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup Tailwind Colors -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#ff2a5f' // Brighter neon red for the universe
+          },
+          animation: {
+            'spin-slow': 'spin 8s linear infinite',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Deep Project Modal (Triggered on Planet Click) -->
+  <div id="planet-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-500">
+    <div class="glass-panel w-full max-w-4xl max-h-[85vh] flex flex-col rounded border border-primary/30 shadow-[0_0_20px_rgba(0,0,0,0.1)] overflow-hidden scale-95 transition-transform duration-500" id="planet-modal-content">
+      <!-- Header -->
+      <div class="p-6 border-b border-black/10 flex justify-between items-start bg-white/40">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <span class="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-widest bg-primary/20 text-primary border border-primary/30 rounded" id="modal-lang">---</span>
+            <div class="flex items-center gap-1 text-amber-400 text-xs font-bold">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <span id="modal-stars">0</span>
+            </div>
+            <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 text-glow animate-pulse">LIVE_CONNECTION_ESTABLISHED</span>
+          </div>
+          <h2 id="modal-title" class="text-3xl font-black text-black hover:text-primary transition-colors cursor-pointer inline-block">Project Name</h2>
+          <p id="modal-desc" class="text-sm text-slate-600 mt-2 max-w-2xl font-light leading-relaxed">Project description goes here...</p>
+        </div>
+        <button id="close-modal" class="text-slate-600 hover:text-black transition-colors bg-black/5 hover:bg-primary/20 p-2 rounded">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <!-- Body (README) -->
+      <div class="p-6 overflow-y-auto overflow-x-hidden custom-scrollbar flex-1 bg-gradient-to-b from-white to-white/80">
+        <div id="modal-readme" class="prose prose-slate max-w-none prose-pre:bg-slate-100 prose-pre:border prose-pre:border-black/10 prose-p:text-slate-700 prose-headings:text-black prose-a:text-primary prose-img:rounded-md prose-img:border prose-img:border-black/10">
+          <div class="flex justify-center items-center h-32">
+            <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Footer actions -->
+      <div class="p-4 border-t border-black/10 bg-white/80 flex justify-end gap-3 backdrop-blur-md">
+        <a id="modal-btn-github" href="#" target="_blank" class="px-5 py-2.5 bg-black/5 hover:bg-black/10 border border-black/20 text-xs font-bold uppercase tracking-widest text-black transition-all hover:border-black flex items-center gap-2">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg>
+          View source code
+        </a>
+        <a id="modal-btn-ide" href="#" class="px-5 py-2.5 bg-primary/20 hover:bg-primary/30 border border-primary/50 text-xs font-bold uppercase tracking-widest text-primary transition-all hover:shadow-[0_0_15px_rgba(255,42,95,0.4)] flex items-center gap-2 group">
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+          Open in IDE
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load the Portfolio Engine for Data -->
+  <script src="js/portfolio-engine.js"></script>
+  <!-- Load the Universe 3D Engine -->
+  <script src="js/universe-engine.js"></script>
+
+</body>
+</html>
