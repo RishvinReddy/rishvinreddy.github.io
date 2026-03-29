@@ -3,80 +3,90 @@
     "title": "Quantum Computing for Everyone – An Introduction",
     "issuer": "Coursera",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/quantum.png",
-    "description": "Introduction to quantum computing concepts including qubits, superposition, and real-world applications.",
-    "tags": ["Quantum Computing", "Qubits"]
+    "image": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Quantum_computing_icon.png",
+    "credential": "https://coursera.org/share/dbae0e740d9dcf8886a34b8c77ce7819",
+    "description": "Explored foundational quantum computing concepts including qubits, superposition, entanglement, and real-world computational applications.",
+    "tags": ["Quantum Computing", "Qubits", "Emerging Tech"]
   },
   {
     "title": "The Arduino Platform and C Programming",
     "issuer": "University of California, Irvine (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/arduino-c.png",
-    "description": "Hands-on embedded systems programming using Arduino and C, including hardware interfacing and microcontroller basics.",
-    "tags": ["Arduino", "Embedded C"]
+    "image": "https://upload.wikimedia.org/wikipedia/commons/8/87/Arduino_Logo.svg",
+    "credential": "https://coursera.org/share/190f5a65e1eab35fff005244709a6865",
+    "description": "Developed embedded systems using Arduino and C, focusing on microcontroller programming and hardware interfacing.",
+    "tags": ["Arduino", "Embedded Systems", "C Programming"]
   },
   {
     "title": "Write Professional Emails in English",
     "issuer": "Georgia Institute of Technology (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/email.png",
-    "description": "Professional communication skills focusing on writing clear, concise, and effective emails in a business environment.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Email_icon.png",
+    "credential": "https://coursera.org/share/a7808f7b2676a0a7cb334ee900d85656",
+    "description": "Mastered professional email communication including tone, clarity, and business writing standards.",
     "tags": ["Communication", "Professional Writing"]
   },
   {
     "title": "Object-Oriented Design",
     "issuer": "University of Alberta (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/ood.png",
-    "description": "Core principles of object-oriented design including abstraction, encapsulation, inheritance, and design patterns.",
-    "tags": ["OOP", "Design Patterns"]
+    "image": "https://upload.wikimedia.org/wikipedia/commons/3/3b/Object-oriented_programming.svg",
+    "credential": "https://coursera.org/share/cb69a0fa9f431b507f7c4917cbb95c57",
+    "description": "Learned OOP principles such as abstraction, encapsulation, inheritance, and design patterns.",
+    "tags": ["OOP", "Design Patterns", "Software Engineering"]
   },
   {
     "title": "Java Programming: Solving Problems with Software",
     "issuer": "Duke University (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/java.png",
-    "description": "Problem-solving using Java programming with a focus on algorithms, logic building, and real-world applications.",
+    "image": "https://upload.wikimedia.org/wikipedia/en/3/30/Java_programming_language_logo.svg",
+    "credential": "https://coursera.org/share/18ee76d13775b3e41398d88e190ce14f",
+    "description": "Built problem-solving skills using Java with a focus on algorithms and real-world applications.",
     "tags": ["Java", "Algorithms"]
   },
   {
     "title": "Nanotechnology and Nanosensors, Part 1",
     "issuer": "Technion – Israel Institute of Technology (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/nano.png",
-    "description": "Fundamentals of nanotechnology and nanosensors with applications in engineering and advanced materials.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Nanotechnology_icon.png",
+    "credential": "https://coursera.org/share/c7e2839d85949cc2eb2148f12c5a1a0d",
+    "description": "Studied nanoscale technologies and sensor systems with real-world engineering applications.",
     "tags": ["Nanotechnology", "Sensors"]
   },
   {
     "title": "Introduction to Cyber Attacks",
-    "issuer": "NYU (Coursera)",
+    "issuer": "New York University (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/cyber.png",
-    "description": "Overview of cybersecurity threats, attack vectors, vulnerabilities, and basic defense mechanisms.",
-    "tags": ["Cybersecurity", "Threat Analysis"]
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Cyber_security_icon.png",
+    "credential": "https://coursera.org/share/4e9da7309b83ff8dd01a440a1fb221de",
+    "description": "Analyzed cybersecurity threats, vulnerabilities, and defensive strategies.",
+    "tags": ["Cybersecurity", "Security"]
   },
   {
     "title": "Interfacing with the Arduino",
     "issuer": "University of California, Irvine (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/arduino-interfacing.png",
-    "description": "Practical experience interfacing sensors and actuators with Arduino for real-world embedded applications.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/8/87/Arduino_Logo.svg",
+    "credential": "https://coursera.org/share/78097e7d7003a579ee1902109d308b1e",
+    "description": "Worked with sensors and actuators using Arduino for IoT applications.",
     "tags": ["Arduino", "IoT"]
   },
   {
     "title": "Data Structures Using Python – An Introduction",
     "issuer": "Coursera",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/dsa.png",
-    "description": "Introduction to fundamental data structures in Python including lists, stacks, queues, and dictionaries.",
-    "tags": ["Python", "Data Structures"]
+    "image": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg",
+    "credential": "https://coursera.org/share/dfc742596f970227d94eea5ebdc86e96",
+    "description": "Learned fundamental data structures and their Python implementations.",
+    "tags": ["Python", "DSA"]
   },
   {
     "title": "Programming for Everybody (Getting Started with Python)",
     "issuer": "University of Michigan (Coursera)",
     "date": "2025",
-    "image": "https://i.postimg.cc/placeholder/python.png",
-    "description": "Beginner-friendly course covering Python basics, problem-solving, and programming fundamentals.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg",
+    "credential": "https://coursera.org/share/72d8b38f21ebd383863982544abae1ed",
+    "description": "Gained foundational programming skills in Python including logic building and problem-solving.",
     "tags": ["Python", "Programming Basics"]
   }
 ]
